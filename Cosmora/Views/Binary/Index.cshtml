@@ -1,0 +1,149 @@
+﻿@model Cosmora.Models.ViewModels.BinaryViewModel
+@{
+    ViewData["Title"] = "Eşik Tahmini (Binary Classification)";
+    string Pct(double v) => (v * 100).ToString("N1") + "%";
+}
+
+<!-- PROBLEM TANIMI -->
+<div class="card mb-3">
+    <div class="card-body">
+        <h6>Problem</h6>
+        <p class="mb-0">
+            <strong>SdcaLogisticRegression</strong> ile tahmin: seçilen bir şehir,
+            <strong>gelecek ay toplam @Model.Threshold.ToString("N0") adet</strong>
+            satış eşiğini aşacak mı? Birim <strong>(şehir, ay)</strong> olarak seçildi;
+            çünkü ürün-şehir kırılımında bu eşik hiç aşılmıyor, şehir-ay kırılımında ise
+            veri dengeli dağılıyor. Feature'lar: son 3 ayın satışları, 3 aylık ortalama, hedef ay.
+        </p>
+    </div>
+</div>
+
+@if (Model.SampleCount == 0)
+{
+    <div class="alert alert-warning">Model kuracak kadar veri bulunamadı.</div>
+}
+else
+{
+    <!-- METRİKLER -->
+    <div class="row g-3 mb-3">
+        <div class="col-md-3">
+            <div class="kpi kpi-rose">
+                <div class="kpi-label">Accuracy</div>
+                <div class="kpi-value">@Pct(Model.Accuracy)</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="kpi kpi-plum">
+                <div class="kpi-label">AUC</div>
+                <div class="kpi-value">@Model.AreaUnderRoc.ToString("N3")</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="kpi kpi-gold">
+                <div class="kpi-label">Precision / Recall</div>
+                <div class="kpi-value">@Pct(Model.Precision) / @Pct(Model.Recall)</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="kpi kpi-teal">
+                <div class="kpi-label">F1 Score</div>
+                <div class="kpi-value">@Pct(Model.F1Score)</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-3 mb-3">
+        <!-- CONFUSION MATRIX -->
+        <div class="col-md-5">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h6>Confusion Matrix (Test Seti)</h6>
+                    <table class="table text-center align-middle mb-2" style="table-layout:fixed">
+                        <thead>
+                            <tr>
+                                <th></th>
+                                <th class="small text-muted">Tahmin: EVET</th>
+                                <th class="small text-muted">Tahmin: HAYIR</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <th class="small text-muted">Gerçek: EVET</th>
+                                <td style="background:#E8F5E9;font-weight:600">@Model.TruePositive<br><span class="small text-muted">TP</span></td>
+                                <td style="background:#FDECEA;font-weight:600">@Model.FalseNegative<br><span class="small text-muted">FN</span></td>
+                            </tr>
+                            <tr>
+                                <th class="small text-muted">Gerçek: HAYIR</th>
+                                <td style="background:#FDECEA;font-weight:600">@Model.FalsePositive<br><span class="small text-muted">FP</span></td>
+                                <td style="background:#E8F5E9;font-weight:600">@Model.TrueNegative<br><span class="small text-muted">TN</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                    <div class="small text-muted">
+                        Örnek sayısı: @Model.SampleCount &nbsp;·&nbsp;
+                        Eğitim: @Model.TrainCount &nbsp;·&nbsp; Test: @Model.TestCount
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- AÇIKLAMA -->
+        <div class="col-md-7">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h6>Metrikler Ne Anlatıyor?</h6>
+                    <ul class="mb-0 small" style="line-height:1.9">
+                        <li><strong>Accuracy:</strong> Tüm tahminlerin ne kadarı doğru.</li>
+                        <li><strong>Precision:</strong> "EVET" dediklerinin ne kadarı gerçekten eşiği aştı.</li>
+                        <li><strong>Recall:</strong> Gerçekten eşiği aşanların ne kadarını yakaladık.</li>
+                        <li><strong>F1:</strong> Precision ve Recall'ın dengeli ortalaması.</li>
+                        <li><strong>AUC:</strong> Modelin EVET/HAYIR ayırt etme gücü (1'e yakın = iyi).</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- GELECEK AY TAHMİNLERİ -->
+    <div class="card">
+        <div class="card-body">
+            <h6>Şehir Bazında Gelecek Ay Tahmini @(string.IsNullOrEmpty(Model.NextMonthLabel) ? "" : $"— {Model.NextMonthLabel}")</h6>
+            <table class="table table-sm table-hover align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th>Şehir</th>
+                        <th class="text-end">3 Ay Önce</th>
+                        <th class="text-end">2 Ay Önce</th>
+                        <th class="text-end">Geçen Ay</th>
+                        <th class="text-end">3 Ay Ort.</th>
+                        <th class="text-center">7.000'i Aşar mı?</th>
+                        <th class="text-end">Olasılık</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var p in Model.Predictions)
+                    {
+                        <tr>
+                            <td class="fw-semibold">@p.City</td>
+                            <td class="text-end text-muted">@p.Lag3.ToString("N0")</td>
+                            <td class="text-end text-muted">@p.Lag2.ToString("N0")</td>
+                            <td class="text-end">@p.Lag1.ToString("N0")</td>
+                            <td class="text-end">@p.Avg3.ToString("N0")</td>
+                            <td class="text-center">
+                                @if (p.WillExceed)
+                                {
+                                    <span class="badge" style="background:#2E7D32">EVET</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary">HAYIR</span>
+                                }
+                            </td>
+                            <td class="text-end fw-semibold">@((p.Probability * 100).ToString("N1"))%</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+}

@@ -12,6 +12,8 @@ builder.Services.AddScoped<IDashboardService, DashboardService>();
 builder.Services.AddScoped<IProductService, ProductService>();
 
 builder.Services.AddScoped<IForecastService, ForecastService>();
+builder.Services.AddScoped<IBinaryClassificationService, BinaryClassificationService>();
+
 // Add services to the container.
 builder.Services.AddControllersWithViews();
 
