@@ -13,6 +13,9 @@ builder.Services.AddScoped<IProductService, ProductService>();
 
 builder.Services.AddScoped<IForecastService, ForecastService>();
 builder.Services.AddScoped<IBinaryClassificationService, BinaryClassificationService>();
+builder.Services.AddScoped<IMulticlassService, MulticlassService>();
+builder.Services.AddScoped<IAnomalyService, AnomalyService>();
+builder.Services.AddScoped<IClusterService, ClusterService>();
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();

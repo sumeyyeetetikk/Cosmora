@@ -1,0 +1,134 @@
+﻿@model Cosmora.Models.ViewModels.ClusterViewModel
+@{
+    ViewData["Title"] = "Şehir Kümeleme (K-Means)";
+    var clusterColors = new[] { "#C2185B", "#6A1B4D", "#C9A227", "#00897B", "#9C27B0" };
+    string Color(int c) => clusterColors[c % clusterColors.Length];
+}
+
+<div class="card mb-3">
+    <div class="card-body">
+        <h6>Problem</h6>
+        <p class="mb-0">
+            <strong>K-Means</strong> ile @Model.CityCount şehri @Model.K kümeye ayırdık.
+            Her şehir hacim temelli 3 özellikle tanımlandı: ortalama günlük satış,
+            3 yıllık toplam satış ve en yoğun gün satışı. Bu veri setinde şehirleri ayıran
+            temel faktör satış hacmi olduğu için kümeler doğal olarak hacim segmentlerine
+            (metropol → küçük şehir) ayrıldı. Özellikler farklı ölçeklerde olduğu için
+            <strong>Min-Max normalizasyon</strong> uygulandı.
+        </p>
+    </div>
+</div>
+
+@if (Model.CityCount == 0)
+{
+    <div class="alert alert-warning">Kümeleme yapacak veri bulunamadı.</div>
+}
+else
+{
+    <div class="row g-3 mb-3">
+        @foreach (var c in Model.Clusters)
+        {
+            <div class="col-md-3">
+                <div class="card h-100" style="border-top:4px solid @Color(c.Cluster)">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <span class="badge" style="background:@Color(c.Cluster)">Küme @c.Cluster</span>
+                            <span class="small text-muted">@c.CityCount şehir</span>
+                        </div>
+                        <div class="fw-semibold mb-2" style="min-height:2.4em">@c.Label</div>
+                        <div class="small text-muted" style="line-height:1.8">
+                            Ort. günlük satış: <strong>@c.AvgDailySales.ToString("N0")</strong><br>
+                            3 yıllık toplam: <strong>@c.TotalVolume.ToString("N0")</strong><br>
+                            En yoğun gün: <strong>@c.PeakDaySales.ToString("N0")</strong>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+
+    <div class="row g-3">
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h6>Şehir Dağılımı (Günlük Satış × Toplam Hacim)</h6>
+                    <canvas id="scatterChart" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h6>Şehirler ve Kümeleri</h6>
+                    <div style="max-height:420px;overflow:auto">
+                        <table class="table table-sm table-hover align-middle mb-0">
+                            <thead style="position:sticky;top:0;background:#fff">
+                                <tr>
+                                    <th>Şehir</th>
+                                    <th class="text-end">Günlük Satış</th>
+                                    <th class="text-end">Toplam</th>
+                                    <th class="text-center">Küme</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @foreach (var row in Model.Cities.OrderBy(x => x.Cluster).ThenByDescending(x => x.AvgDailySales))
+                                {
+                                    <tr>
+                                        <td class="fw-semibold">@row.City <span class="small text-muted">@row.Country</span></td>
+                                        <td class="text-end">@row.AvgDailySales.ToString("N0")</td>
+                                        <td class="text-end text-muted">@row.TotalVolume.ToString("N0")</td>
+                                        <td class="text-center">
+                                            <span class="badge" style="background:@Color(row.Cluster)">@row.Cluster</span>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @section Scripts {
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+        <script>
+            const cities = @Json.Serialize(Model.Cities);
+            const colors = @Json.Serialize(clusterColors);
+
+            const byCluster = {};
+            cities.forEach(c => {
+                (byCluster[c.cluster] ??= []).push({
+                    x: c.avgDailySales,
+                    y: c.totalVolume,
+                    city: c.city
+                });
+            });
+
+            const datasets = Object.keys(byCluster).map(k => ({
+                label: 'Küme ' + k,
+                data: byCluster[k],
+                backgroundColor: colors[k % colors.length],
+                pointRadius: 6, pointHoverRadius: 8
+            }));
+
+            new Chart(scatterChart, {
+                type: 'scatter',
+                data: { datasets },
+                options: {
+                    plugins: {
+                        legend: { position: 'bottom' },
+                        tooltip: { callbacks: {
+                            label: ctx => `${ctx.raw.city}: ${ctx.raw.x.toFixed(0)} günlük, ${ctx.raw.y.toFixed(0)} toplam`
+                        }}
+                    },
+                    scales: {
+                        x: { title: { display: true, text: 'Ortalama Günlük Satış' } },
+                        y: { title: { display: true, text: '3 Yıllık Toplam Satış' } }
+                    }
+                }
+            });
+        </script>
+    }
+}

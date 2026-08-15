@@ -1,0 +1,175 @@
+﻿@model Cosmora.Models.ViewModels.MulticlassViewModel
+@{
+    ViewData["Title"] = "Performans Sınıfı (Multiclass)";
+    string Pct(double v) => (v * 100).ToString("N1") + "%";
+
+    string ClassBadge(string c) => c switch
+    {
+        "High" => "background:#2E7D32",
+        "Medium" => "background:#C9A227",
+        _ => "background:#8A7F92"
+    };
+}
+
+<!-- PROBLEM + SINIF SINIRLARI -->
+<div class="card mb-3">
+    <div class="card-body">
+        <h6>Problem & Sınıf Sınırları</h6>
+        <p class="mb-2">
+            <strong>SdcaMaximumEntropy</strong> ile tahmin: seçilen şehir gelecek ay hangi
+            performans sınıfında olacak — <strong>Düşük / Orta / Yüksek</strong>?
+            Feature'lar Binary ile aynı (son 3 ay, 3 ay ortalaması, hedef ay); birim yine (şehir, ay).
+        </p>
+        <p class="mb-0 small text-muted">
+            Sınıf sınırları veriden hesaplandı: aylık şehir toplamlarının
+            <strong>%33 persentili = @Model.P33.ToString("N0")</strong> ve
+            <strong>%66 persentili = @Model.P66.ToString("N0")</strong>.
+            Bu yöntem üç sınıfı yaklaşık eşit büyüklükte tutar (dengeli problem).
+        </p>
+        <div class="d-flex gap-2 mt-3 flex-wrap">
+            <span class="badge" style="background:#8A7F92">
+                Low: total ≤ @Model.LowUpper.ToString("N0")
+            </span>
+            <span class="badge" style="background:#C9A227">
+                Medium: @Model.LowUpper.ToString("N0") &lt; total ≤ @Model.MediumUpper.ToString("N0")
+            </span>
+            <span class="badge" style="background:#2E7D32">
+                High: total &gt; @Model.MediumUpper.ToString("N0")
+            </span>
+        </div>
+    </div>
+</div>
+
+@if (Model.SampleCount < 30)
+{
+    <div class="alert alert-warning">Model kuracak kadar veri yok (örnek: @Model.SampleCount).</div>
+}
+else
+{
+    <!-- METRİKLER -->
+    <div class="row g-3 mb-3">
+        <div class="col-md-3">
+            <div class="kpi kpi-rose">
+                <div class="kpi-label">Micro Accuracy</div>
+                <div class="kpi-value">@Pct(Model.MicroAccuracy)</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="kpi kpi-plum">
+                <div class="kpi-label">Macro Accuracy</div>
+                <div class="kpi-value">@Pct(Model.MacroAccuracy)</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="kpi kpi-gold">
+                <div class="kpi-label">Log Loss</div>
+                <div class="kpi-value">@Model.LogLoss.ToString("N3")</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="kpi kpi-teal">
+                <div class="kpi-label">Eğitim / Test</div>
+                <div class="kpi-value" style="font-size:1.2rem">@Model.TrainCount / @Model.TestCount</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-3 mb-3">
+        <!-- CONFUSION MATRIX 3x3 -->
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h6>Confusion Matrix (Test Seti)</h6>
+                    <table class="table text-center align-middle mb-2" style="table-layout:fixed">
+                        <thead>
+                            <tr>
+                                <th class="small text-muted">Gerçek ↓ / Tahmin →</th>
+                                @foreach (var c in Model.ClassOrder)
+                                {
+                                    <th class="small text-muted">@c</th>
+                                }
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @for (int i = 0; i < Model.ClassOrder.Count; i++)
+                            {
+                                <tr>
+                                    <th class="small text-muted">@Model.ClassOrder[i]</th>
+                                    @for (int j = 0; j < Model.ClassOrder.Count; j++)
+                                    {
+                                        var val = Model.Confusion[i][j];
+                                        var isDiag = i == j;
+                                        <td style="font-weight:600;background:@(isDiag ? "#E8F5E9" : "#FDECEA")">@val</td>
+                                    }
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                    <div class="small text-muted">Köşegen (yeşil) = doğru sınıflandırılan örnekler.</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SINIF DAĞILIMI -->
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h6>Sınıf Dağılımı (Tüm Örnekler)</h6>
+                    <canvas id="distChart" height="150"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- GELECEK AY TAHMİNLERİ -->
+    <div class="card">
+        <div class="card-body">
+            <h6>Şehir Bazında Gelecek Ay Performans Tahmini @(string.IsNullOrEmpty(Model.NextMonthLabel) ? "" : $"— {Model.NextMonthLabel}")</h6>
+            <table class="table table-sm table-hover align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th>Şehir</th>
+                        <th class="text-end">Geçen Ay</th>
+                        <th class="text-end">3 Ay Ort.</th>
+                        <th class="text-center">Tahmin Sınıfı</th>
+                        <th class="text-end">Güven</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var p in Model.Predictions)
+                    {
+                        <tr>
+                            <td class="fw-semibold">@p.City</td>
+                            <td class="text-end text-muted">@p.Lag1.ToString("N0")</td>
+                            <td class="text-end">@p.Avg3.ToString("N0")</td>
+                            <td class="text-center">
+                                <span class="badge" style="@ClassBadge(p.PredictedClass)">@p.PredictedClass</span>
+                            </td>
+                            <td class="text-end fw-semibold">@((p.Confidence * 100).ToString("N1"))%</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    @section Scripts {
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+        <script>
+            new Chart(distChart, {
+                type: 'bar',
+                data: {
+                    labels: ['Low', 'Medium', 'High'],
+                    datasets: [{
+                        data: [@Model.LowCount, @Model.MediumCount, @Model.HighCount],
+                        backgroundColor: ['#8A7F92', '#C9A227', '#2E7D32']
+                    }]
+                },
+                options: {
+                    plugins: { legend: { display: false } },
+                    scales: { y: { beginAtZero: true } }
+                }
+            });
+        </script>
+    }
+}

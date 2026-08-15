@@ -1,0 +1,153 @@
+﻿@model Cosmora.Models.ViewModels.AnomalyViewModel
+@{
+    ViewData["Title"] = "Anomali Tespiti (SR-CNN)";
+}
+
+<!-- ŞEHİR SEÇİMİ -->
+<div class="card mb-3">
+    <div class="card-body">
+        <form method="get" class="row g-2 align-items-end">
+            <div class="col-md-4">
+                <label class="form-label small text-muted">Şehir seç</label>
+                <select name="cityId" class="form-select form-select-sm" onchange="this.form.submit()">
+                    @foreach (var c in Model.Cities)
+                    {
+                        <option value="@c.Id" selected="@(Model.CityId == c.Id)">@c.Name</option>
+                    }
+                </select>
+            </div>
+            <div class="col-auto">
+                <button type="submit" class="btn btn-sm text-white" style="background:var(--rose)">
+                    <i class="bi bi-exclamation-triangle"></i> Tara
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- PARAMETRELER + ÖZET -->
+<div class="row g-3 mb-3">
+    <div class="col-md-8">
+        <div class="card h-100">
+            <div class="card-body">
+                <h6>Kullanılan SR-CNN Parametreleri</h6>
+                <div class="row text-center g-2">
+                    <div class="col"><div class="small text-muted">threshold</div><div class="fw-bold">@Model.Threshold</div></div>
+                    <div class="col"><div class="small text-muted">sensitivity</div><div class="fw-bold">@Model.Sensitivity</div></div>
+                    <div class="col"><div class="small text-muted">period</div><div class="fw-bold">@Model.Period</div></div>
+                    <div class="col"><div class="small text-muted">detectMode</div><div class="fw-bold">AnomalyAndMargin</div></div>
+                </div>
+                <div class="small text-muted mt-2">
+                    threshold: skor bu değeri aşan gün anomali sayılır ·
+                    sensitivity: beklenen bandın darlığı ·
+                    period: haftalık desen (7 gün) mevsimsellikten ayıklanır.
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="kpi kpi-rose h-100">
+            <i class="bi bi-exclamation-octagon kpi-icon"></i>
+            <div class="kpi-label">Tespit Edilen Anomali</div>
+            <div class="kpi-value">@Model.AnomalyCount</div>
+            <div class="small" style="opacity:.85">@Model.TotalDays gün tarandı</div>
+        </div>
+    </div>
+</div>
+
+@if (!Model.Series.Any())
+{
+    <div class="alert alert-warning">Bu şehir için anomali taraması yapacak kadar veri yok.</div>
+}
+else
+{
+    <!-- GRAFİK -->
+    <div class="card mb-3">
+        <div class="card-body">
+            <h6>@Model.SelectedCityName — Günlük Satış ve Anomaliler</h6>
+            <canvas id="anomalyChart" height="90"></canvas>
+        </div>
+    </div>
+
+    <!-- ANOMALİ TABLOSU -->
+    <div class="card">
+        <div class="card-body">
+            <h6>Anomali Günleri (skora göre sıralı)</h6>
+            @if (!Model.Anomalies.Any())
+            {
+                <p class="text-muted mb-0">Bu şehirde eşik üstü anomali bulunamadı.</p>
+            }
+            else
+            {
+                <table class="table table-sm table-hover align-middle mb-0">
+                    <thead>
+                        <tr>
+                            <th>Tarih</th>
+                            <th class="text-end">Gerçek Satış</th>
+                            <th class="text-end">Beklenen</th>
+                            <th class="text-center">Yön</th>
+                            <th class="text-end">Skor</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var a in Model.Anomalies)
+                        {
+                            <tr>
+                                <td class="fw-semibold">@a.Date</td>
+                                <td class="text-end">@a.Value.ToString("N0")</td>
+                                <td class="text-end text-muted">@a.Expected.ToString("N0")</td>
+                                <td class="text-center">
+                                    @if (a.Direction == "Sıçrama")
+                                    {
+                                        <span class="badge" style="background:#2E7D32"><i class="bi bi-arrow-up"></i> Sıçrama</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge" style="background:#C62828"><i class="bi bi-arrow-down"></i> Düşüş</span>
+                                    }
+                                </td>
+                                <td class="text-end fw-semibold">@a.Score.ToString("N2")</td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+        </div>
+    </div>
+
+    @section Scripts {
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+        <script>
+            const series = @Json.Serialize(Model.Series);
+            const labels = series.map(x => x.date);
+            const actual = series.map(x => x.value);
+            const expected = series.map(x => x.expected);
+            // Anomali noktaları: sadece anomali günlerde değer, diğerlerinde null
+            const anomalyPts = series.map(x => x.isAnomaly ? x.value : null);
+
+            new Chart(anomalyChart, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        { label: 'Günlük Satış', data: actual, borderColor: '#6A1B4D',
+                          borderWidth: 1.5, pointRadius: 0, tension: .2 },
+                        { label: 'Beklenen', data: expected, borderColor: 'rgba(201,162,39,.7)',
+                          borderWidth: 1, borderDash: [4,3], pointRadius: 0 },
+                        { label: 'Anomali', data: anomalyPts, borderColor: '#C62828',
+                          backgroundColor: '#C62828', pointRadius: 4, pointHoverRadius: 6,
+                          showLine: false }
+                    ]
+                },
+                options: {
+                    plugins: { legend: { position: 'bottom' } },
+                    scales: {
+                        x: { ticks: { maxTicksLimit: 12, autoSkip: true } },
+                        y: { beginAtZero: true }
+                    },
+                    interaction: { intersect: false, mode: 'index' }
+                }
+            });
+        </script>
+    }
+}
