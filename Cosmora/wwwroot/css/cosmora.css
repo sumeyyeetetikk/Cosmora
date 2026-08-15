@@ -211,3 +211,11 @@ h6 {
             left: 0;
         }
 }
+.pagination .page-item.active .page-link {
+    background: var(--rose);
+    border-color: var(--rose);
+}
+
+.pagination .page-link {
+    color: var(--plum);
+}

@@ -1,0 +1,122 @@
+﻿@model Cosmora.Models.ViewModels.ForecastViewModel
+@{
+    ViewData["Title"] = "Satış Tahmini (SSA)";
+}
+
+<!-- ŞEHİR SEÇİMİ -->
+<div class="card mb-3">
+    <div class="card-body">
+        <form method="get" class="row g-2 align-items-end">
+            <div class="col-md-4">
+                <label class="form-label small text-muted">Şehir seç</label>
+                <select name="cityId" class="form-select form-select-sm" onchange="this.form.submit()">
+                    @foreach (var c in Model.Cities)
+                    {
+                        <option value="@c.Id" selected="@(Model.CityId == c.Id)">@c.Name</option>
+                    }
+                </select>
+            </div>
+            <div class="col-auto">
+                <button type="submit" class="btn btn-sm text-white" style="background:var(--rose)">
+                    <i class="bi bi-graph-up-arrow"></i> Tahmin Et
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- PARAMETRELER -->
+<div class="card mb-3">
+    <div class="card-body">
+        <h6>Kullanılan SSA Parametreleri</h6>
+        <div class="row text-center g-2">
+            <div class="col"><div class="small text-muted">windowSize</div><div class="fw-bold">@Model.WindowSize</div></div>
+            <div class="col"><div class="small text-muted">seriesLength</div><div class="fw-bold">@Model.SeriesLength</div></div>
+            <div class="col"><div class="small text-muted">trainSize</div><div class="fw-bold">@Model.TrainSize</div></div>
+            <div class="col"><div class="small text-muted">horizon</div><div class="fw-bold">@Model.Horizon</div></div>
+            <div class="col"><div class="small text-muted">confidenceLevel</div><div class="fw-bold">@Model.ConfidenceLevel</div></div>
+        </div>
+    </div>
+</div>
+
+@if (!Model.Forecast.Any())
+{
+    <div class="alert alert-warning">Bu şehir için tahmin üretecek kadar veri yok.</div>
+}
+else
+{
+    <!-- GRAFİK -->
+    <div class="card mb-3">
+        <div class="card-body">
+            <h6>@Model.SelectedCityName — Son 30 Gün + 7 Günlük Tahmin</h6>
+            <canvas id="forecastChart" height="90"></canvas>
+        </div>
+    </div>
+
+    <!-- TAHMİN TABLOSU -->
+    <div class="card">
+        <div class="card-body">
+            <h6>7 Günlük Tahmin Detayı</h6>
+            <table class="table table-sm align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th>Tarih</th>
+                        <th class="text-end">Tahmini Satış</th>
+                        <th class="text-end">Alt Sınır</th>
+                        <th class="text-end">Üst Sınır</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var f in Model.Forecast)
+                    {
+                        <tr>
+                            <td>@f.Date</td>
+                            <td class="text-end fw-semibold">@f.Predicted.ToString("N0")</td>
+                            <td class="text-end text-muted">@f.LowerBound.ToString("N0")</td>
+                            <td class="text-end text-muted">@f.UpperBound.ToString("N0")</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    @section Scripts {
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+        <script>
+            const hist = @Json.Serialize(Model.History);
+            const fc   = @Json.Serialize(Model.Forecast);
+
+            // Etiketler: geçmiş tarihler + tahmin tarihleri
+            const labels = hist.map(x => x.date).concat(fc.map(x => x.date));
+
+            // Gerçek seri: geçmiş dolu, tahmin kısmı null
+            const actual = hist.map(x => x.quantity).concat(fc.map(() => null));
+            // Tahmin serisi: geçmiş null, son gerçek noktadan başlasın diye köprü
+            const predicted = hist.map(() => null);
+            predicted[predicted.length - 1] = hist[hist.length - 1].quantity; // bağlantı noktası
+            fc.forEach(x => predicted.push(x.predicted));
+            const lower = hist.map(() => null).concat(fc.map(x => x.lowerBound));
+            const upper = hist.map(() => null).concat(fc.map(x => x.upperBound));
+
+            new Chart(forecastChart, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        { label: 'Gerçek', data: actual, borderColor: '#6A1B4D',
+                          backgroundColor: 'rgba(106,27,77,.08)', tension: .3, pointRadius: 2, borderWidth: 2 },
+                        { label: 'Tahmin', data: predicted, borderColor: '#C2185B',
+                          borderDash: [6,4], tension: .3, pointRadius: 3, borderWidth: 2 },
+                        { label: 'Üst Sınır', data: upper, borderColor: 'rgba(201,162,39,.6)',
+                          pointRadius: 0, borderWidth: 1, fill: '+1' },
+                        { label: 'Alt Sınır', data: lower, borderColor: 'rgba(201,162,39,.6)',
+                          backgroundColor: 'rgba(201,162,39,.12)', pointRadius: 0, borderWidth: 1, fill: false }
+                    ]
+                },
+                options: { plugins: { legend: { position: 'bottom' } },
+                           scales: { y: { beginAtZero: true } } }
+            });
+        </script>
+    }
+}

@@ -9,7 +9,9 @@ builder.Services.AddDbContext<CosmoraDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 builder.Services.AddScoped<IDashboardService, DashboardService>();
+builder.Services.AddScoped<IProductService, ProductService>();
 
+builder.Services.AddScoped<IForecastService, ForecastService>();
 // Add services to the container.
 builder.Services.AddControllersWithViews();
 

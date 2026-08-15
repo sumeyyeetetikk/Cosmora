@@ -1,0 +1,178 @@
+﻿@model Cosmora.Models.ViewModels.SalesListViewModel
+@{
+    ViewData["Title"] = "Ürünler & Satışlar";
+}
+
+<!-- EN ÇOK SATAN 20 ÜRÜN -->
+<div class="card mb-4">
+    <div class="card-body">
+        <h6>En Çok Satan 20 Ürün</h6>
+        <div class="table-responsive">
+            <table class="table table-sm align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Ürün</th>
+                        <th>Kategori</th>
+                        <th class="text-end">Toplam Adet</th>
+                        <th class="text-end">Toplam Ciro</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @{
+                        int rank = 1;
+                    }
+                    @foreach (var p in Model.TopProducts)
+                    {
+                        <tr>
+                            <td><span class="badge" style="background:var(--rose)">@rank</span></td>
+                            <td class="fw-semibold">@p.Product</td>
+                            <td><span class="text-muted">@p.Category</span></td>
+                            <td class="text-end">@p.TotalQuantity.ToString("N0")</td>
+                            <td class="text-end">@p.TotalRevenue.ToString("N0") ₺</td>
+                        </tr>
+                        rank++;
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- FİLTRELER -->
+<div class="card mb-3">
+    <div class="card-body">
+        <form method="get" class="row g-2 align-items-end">
+            <div class="col-md-3">
+                <label class="form-label small text-muted">Kategori</label>
+                <select name="CategoryId" class="form-select form-select-sm">
+                    <option value="">Tümü</option>
+                    @foreach (var c in Model.Categories)
+                    {
+                        <option value="@c.Id" selected="@(Model.CategoryId == c.Id)">@c.Name</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label small text-muted">Şehir</label>
+                <select name="CityId" class="form-select form-select-sm">
+                    <option value="">Tümü</option>
+                    @foreach (var c in Model.Cities)
+                    {
+                        <option value="@c.Id" selected="@(Model.CityId == c.Id)">@c.Name</option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small text-muted">Başlangıç</label>
+                <input type="date" name="From" class="form-control form-control-sm"
+                       value="@(Model.From?.ToString("yyyy-MM-dd"))" />
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small text-muted">Bitiş</label>
+                <input type="date" name="To" class="form-control form-control-sm"
+                       value="@(Model.To?.ToString("yyyy-MM-dd"))" />
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small text-muted">Kampanya</label>
+                <select name="IsCampaign" class="form-select form-select-sm">
+                    <option value="">Tümü</option>
+                    <option value="true" selected="@(Model.IsCampaign == true)">Sadece Kampanyalı</option>
+                    <option value="false" selected="@(Model.IsCampaign == false)">Kampanyasız</option>
+                </select>
+            </div>
+            <div class="col-12 d-flex gap-2 mt-2">
+                <button type="submit" class="btn btn-sm text-white" style="background:var(--rose)">
+                    <i class="bi bi-funnel"></i> Filtrele
+                </button>
+                <a href="/Products" class="btn btn-sm btn-outline-secondary">Temizle</a>
+                <span class="ms-auto align-self-center text-muted small">
+                    Toplam <b>@Model.TotalCount.ToString("N0")</b> kayıt bulundu
+                </span>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- SATIŞ TABLOSU -->
+<div class="card">
+    <div class="card-body">
+        <h6>Satış Kayıtları (Sayfa @Model.Page / @Model.TotalPages)</h6>
+        <div class="table-responsive">
+            <table class="table table-hover table-sm align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th>Tarih</th>
+                        <th>Ürün</th>
+                        <th>Kategori</th>
+                        <th>Şehir</th>
+                        <th class="text-end">Adet</th>
+                        <th class="text-end">Birim ₺</th>
+                        <th class="text-end">Toplam ₺</th>
+                        <th>Ödeme</th>
+                        <th>Kampanya</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var r in Model.Rows)
+                    {
+                        <tr>
+                            <td>@r.OrderDate.ToString("dd.MM.yyyy")</td>
+                            <td class="fw-semibold">@r.Product</td>
+                            <td><span class="text-muted small">@r.Category</span></td>
+                            <td>@r.City <span class="text-muted small">/ @r.Country</span></td>
+                            <td class="text-end">@r.Quantity</td>
+                            <td class="text-end">@r.UnitPrice.ToString("N2")</td>
+                            <td class="text-end fw-semibold">@r.TotalAmount.ToString("N2")</td>
+                            <td><span class="badge bg-light text-dark">@r.PaymentMethod</span></td>
+                            <td>
+                                @if (r.IsCampaign)
+                                {
+                                    <span class="badge" style="background:var(--gold)">Evet</span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary">Hayır</span>
+                                }
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <!-- SAYFALAMA -->
+        @if (Model.TotalPages > 1)
+        {
+            <nav class="mt-3">
+                <ul class="pagination pagination-sm justify-content-center mb-0">
+                    @{
+                        int start = Math.Max(1, Model.Page - 2);
+                        int end = Math.Min(Model.TotalPages, Model.Page + 2);
+                        string Q(int p) =>
+                        $"?Page={p}&PageSize={Model.PageSize}&CategoryId={Model.CategoryId}&CityId={Model.CityId}"
+                        + $"&From={Model.From?.ToString("yyyy-MM-dd")}&To={Model.To?.ToString("yyyy-MM-dd")}&IsCampaign={Model.IsCampaign}";
+                    }
+                    <li class="page-item @(Model.Page == 1 ? "disabled" : "")">
+                        <a class="page-link" href="@Q(1)">«</a>
+                    </li>
+                    <li class="page-item @(Model.Page == 1 ? "disabled" : "")">
+                        <a class="page-link" href="@Q(Model.Page - 1)">‹</a>
+                    </li>
+                    @for (int p = start; p <= end; p++)
+                    {
+                        <li class="page-item @(p == Model.Page ? "active" : "")">
+                            <a class="page-link" href="@Q(p)">@p</a>
+                        </li>
+                    }
+                    <li class="page-item @(Model.Page == Model.TotalPages ? "disabled" : "")">
+                        <a class="page-link" href="@Q(Model.Page + 1)">›</a>
+                    </li>
+                    <li class="page-item @(Model.Page == Model.TotalPages ? "disabled" : "")">
+                        <a class="page-link" href="@Q(Model.TotalPages)">»</a>
+                    </li>
+                </ul>
+            </nav>
+        }
+    </div>
+</div>
