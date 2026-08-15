@@ -1,0 +1,213 @@
+﻿:root {
+    --rose: #C2185B; /* ana marka - gül */
+    --rose-soft: #E91E8C;
+    --rose-050: #FCE4EC;
+    --plum: #6A1B4D; /* koyu bordo-mor (sidebar) */
+    --plum-900: #4A123540;
+    --gold: #C9A227; /* şampanya/altın vurgu */
+    --ink: #2B2233; /* metin */
+    --muted: #8A7F92;
+    --bg: #F7F3F6; /* sayfa arkaplanı - çok açık gül */
+    --card: #FFFFFF;
+    --shadow: 0 4px 20px rgba(106,27,77,.08);
+    --shadow-lg: 0 8px 30px rgba(106,27,77,.14);
+    --radius: 16px;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    margin: 0;
+}
+
+/* ---- SHELL: sidebar + content ---- */
+.app {
+    display: flex;
+    min-height: 100vh;
+}
+
+.sidebar {
+    width: 250px;
+    flex-shrink: 0;
+    background: linear-gradient(180deg, var(--plum) 0%, #3E0F2E 100%);
+    color: #F3E9EF;
+    padding: 24px 0;
+    position: sticky;
+    top: 0;
+    height: 100vh;
+}
+
+    .sidebar .brand {
+        font-size: 1.5rem;
+        font-weight: 700;
+        letter-spacing: .5px;
+        padding: 0 24px 24px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+        .sidebar .brand span {
+            color: var(--gold);
+        }
+
+    .sidebar .nav-link {
+        color: #E7D6E0;
+        padding: 12px 24px;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        font-weight: 500;
+        border-left: 3px solid transparent;
+        transition: .2s;
+    }
+
+        .sidebar .nav-link:hover {
+            background: rgba(255,255,255,.06);
+            color: #fff;
+        }
+
+        .sidebar .nav-link.active {
+            background: rgba(233,30,140,.18);
+            color: #fff;
+            border-left-color: var(--gold);
+        }
+
+    .sidebar .nav-section {
+        font-size: .7rem;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        color: #B98FA9;
+        padding: 20px 24px 8px;
+    }
+
+.content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.topbar {
+    height: 64px;
+    background: var(--card);
+    box-shadow: var(--shadow);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 28px;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+    .topbar .page-title {
+        font-weight: 600;
+        font-size: 1.1rem;
+    }
+
+    .topbar .user-chip {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-weight: 500;
+    }
+
+    .topbar .avatar {
+        width: 38px;
+        height: 38px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, var(--rose), var(--gold));
+        color: #fff;
+        display: grid;
+        place-items: center;
+        font-weight: 700;
+    }
+
+.page-wrap {
+    padding: 28px;
+}
+
+/* ---- CARDS ---- */
+.card {
+    border: none;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+    background: var(--card);
+}
+
+    .card:hover {
+        box-shadow: var(--shadow-lg);
+    }
+
+.card-body {
+    padding: 20px;
+}
+
+/* KPI kartları */
+.kpi {
+    border-radius: var(--radius);
+    padding: 20px;
+    color: #fff;
+    box-shadow: var(--shadow);
+}
+
+    .kpi .kpi-label {
+        font-size: .8rem;
+        opacity: .9;
+    }
+
+    .kpi .kpi-value {
+        font-size: 1.7rem;
+        font-weight: 700;
+        margin-top: 4px;
+    }
+
+    .kpi .kpi-icon {
+        float: right;
+        font-size: 1.6rem;
+        opacity: .55;
+    }
+
+.kpi-rose {
+    background: linear-gradient(135deg, #C2185B, #E91E8C);
+}
+
+.kpi-plum {
+    background: linear-gradient(135deg, #6A1B4D, #9C27B0);
+}
+
+.kpi-gold {
+    background: linear-gradient(135deg, #C9A227, #E0B84C);
+}
+
+.kpi-teal {
+    background: linear-gradient(135deg, #00897B, #26A69A);
+}
+
+h6 {
+    color: var(--muted);
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: .75rem;
+    letter-spacing: .5px;
+    margin-bottom: 16px;
+}
+
+@media (max-width: 900px) {
+    .sidebar {
+        position: fixed;
+        left: -250px;
+        z-index: 100;
+        transition: .25s;
+    }
+
+        .sidebar.open {
+            left: 0;
+        }
+}

@@ -1,0 +1,153 @@
+﻿@model Cosmora.Models.ViewModels.DashboardViewModel
+@{
+    ViewData["Title"] = "Dashboard";
+}
+
+<!-- KPI KARTLARI -->
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="kpi kpi-rose">
+            <i class="bi bi-cash-stack kpi-icon"></i>
+            <div class="kpi-label">Toplam Ciro</div>
+            <div class="kpi-value">@Model.TotalRevenue.ToString("N0") ₺</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="kpi kpi-plum">
+            <i class="bi bi-basket kpi-icon"></i>
+            <div class="kpi-label">Toplam Adet</div>
+            <div class="kpi-value">@Model.TotalQuantity.ToString("N0")</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="kpi kpi-gold">
+            <i class="bi bi-receipt kpi-icon"></i>
+            <div class="kpi-label">Toplam Sipariş</div>
+            <div class="kpi-value">@Model.TotalOrders.ToString("N0")</div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="kpi kpi-teal">
+            <i class="bi bi-bag-heart kpi-icon"></i>
+            <div class="kpi-label">Ort. Sepet</div>
+            <div class="kpi-value">@Model.AvgBasket.ToString("N2") ₺</div>
+        </div>
+    </div>
+</div>
+
+<!-- GRAFİKLER -->
+<div class="row g-4">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-body">
+                <h6>Aylık Satış Trendi</h6><canvas id="trendChart" height="110"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-body">
+                <h6>Kategori Dağılımı</h6><canvas id="categoryChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-body">
+                <h6>En Çok Satan 10 Ürün</h6><canvas id="topChart" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-body">
+                <h6>Ülke Bazlı Ciro</h6><canvas id="countryChart" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-body">
+                <h6>Ödeme Yöntemi Dağılımı</h6><canvas id="paymentChart" height="180"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-lg-6">
+        <div class="card">
+            <div class="card-body">
+                <h6>Kampanyalı vs Kampanyasız</h6><canvas id="campaignChart" height="180"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+    <script>
+        // --- Tema paleti ---
+        const rose = '#C2185B', roseSoft = '#E91E8C', plum = '#6A1B4D',
+              gold = '#C9A227', teal = '#00897B', purple = '#9C27B0';
+        const palette = [rose, gold, plum, teal, purple, roseSoft, '#F06292', '#BA68C8'];
+        Chart.defaults.font.family = "'Segoe UI', system-ui, sans-serif";
+        Chart.defaults.color = '#8A7F92';
+
+        // --- Veri (SQL tarafında aggregate edildi) ---
+        const trend = @Json.Serialize(Model.MonthlyTrend);
+        const cats  = @Json.Serialize(Model.ByCategory);
+        const tops  = @Json.Serialize(Model.TopProducts);
+        const ctry  = @Json.Serialize(Model.ByCountry);
+        const pay   = @Json.Serialize(Model.ByPayment);
+        const camp  = @Json.Serialize(Model.CampaignCompare);
+
+        new Chart(trendChart, {
+            type: 'line',
+            data: {
+                labels: trend.map(x => x.label),
+                datasets: [{
+                    label: 'Ciro', data: trend.map(x => x.revenue),
+                    borderColor: rose, backgroundColor: 'rgba(194,24,91,.12)',
+                    tension: .3, fill: true, pointRadius: 0, borderWidth: 2
+                }]
+            },
+            options: { plugins: { legend: { display: false } },
+                       scales: { y: { beginAtZero: true } } }
+        });
+
+        new Chart(categoryChart, {
+            type: 'doughnut',
+            data: { labels: cats.map(x => x.label),
+                    datasets: [{ data: cats.map(x => x.value), backgroundColor: palette, borderWidth: 2, borderColor: '#fff' }] },
+            options: { plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, padding: 10 } } } }
+        });
+
+        new Chart(topChart, {
+            type: 'bar',
+            data: { labels: tops.map(x => x.label),
+                    datasets: [{ label: 'Adet', data: tops.map(x => x.value), backgroundColor: rose, borderRadius: 6 }] },
+            options: { indexAxis: 'y', plugins: { legend: { display: false } } }
+        });
+
+        new Chart(countryChart, {
+            type: 'bar',
+            data: { labels: ctry.map(x => x.label),
+                    datasets: [{ label: 'Ciro', data: ctry.map(x => x.value), backgroundColor: plum, borderRadius: 6 }] },
+            options: { plugins: { legend: { display: false } } }
+        });
+
+        new Chart(paymentChart, {
+            type: 'pie',
+            data: { labels: pay.map(x => x.label),
+                    datasets: [{ data: pay.map(x => x.value), backgroundColor: palette, borderWidth: 2, borderColor: '#fff' }] },
+            options: { plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, padding: 10 } } } }
+        });
+
+        new Chart(campaignChart, {
+            type: 'bar',
+            data: { labels: camp.map(x => x.label),
+                    datasets: [{ label: 'Ciro', data: camp.map(x => x.value), backgroundColor: [gold, rose], borderRadius: 6 }] },
+            options: { plugins: { legend: { display: false } } }
+        });
+    </script>
+}
