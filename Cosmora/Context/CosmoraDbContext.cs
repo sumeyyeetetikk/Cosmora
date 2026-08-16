@@ -45,7 +45,7 @@ namespace Cosmora.Context
                 e.Property(s => s.TotalAmount).HasColumnType("decimal(18,2)");
                 e.Property(s => s.DiscountRate).HasColumnType("decimal(5,4)");
                 e.Property(s => s.PaymentMethod)
-                 .HasConversion<string>()   // DB'de okunabilir string olarak dursun
+                 .HasConversion<string>()   
                  .HasMaxLength(20);
 
                 e.HasOne(s => s.Product)
@@ -58,11 +58,8 @@ namespace Cosmora.Context
                  .HasForeignKey(s => s.CityId)
                  .OnDelete(DeleteBehavior.Restrict);
 
-                // Görev 1 & 4: şehir bazlı günlük toplamlar
                 e.HasIndex(s => new { s.CityId, s.OrderDate });
-                // Görev 2 & 3: şehir+ürün bazlı aylık aggregation
                 e.HasIndex(s => new { s.ProductId, s.CityId, s.OrderDate });
-                // Genel tarih sorguları
                 e.HasIndex(s => s.OrderDate);
             });
         }

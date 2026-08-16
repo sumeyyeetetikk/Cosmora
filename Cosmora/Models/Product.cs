@@ -12,10 +12,8 @@ namespace Cosmora.Models
 
         public decimal BaseUnitPrice { get; set; }
 
-        // Göreli satış hacmi çarpanı (seeder kullanır): 0.2 = niş, 3.0 = çok satan
         public double Popularity { get; set; }
 
-        // Mevsimsel talep desenini belirler
         public SeasonalPattern Seasonality { get; set; }
 
         public ICollection<Sale> Sales { get; set; } = new List<Sale>();

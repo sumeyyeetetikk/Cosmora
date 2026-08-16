@@ -14,9 +14,9 @@ public class CityClusterRow
     public string City { get; set; } = "";
     public string Country { get; set; } = "";
     public int Cluster { get; set; }
-    public double AvgDailySales { get; set; }   // ortalama günlük satış
-    public double TotalVolume { get; set; }     // 3 yıllık toplam adet
-    public double PeakDaySales { get; set; }    // en yoğun gün
+    public double AvgDailySales { get; set; }   
+    public double TotalVolume { get; set; }     
+    public double PeakDaySales { get; set; }   
 }
 
 public class ClusterSummary

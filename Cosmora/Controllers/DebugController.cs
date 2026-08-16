@@ -13,7 +13,6 @@ public class DebugController : Controller
         _config = config;
     }
 
-    // /Debug/Models -> Cerebras'taki modelleri ham JSON olarak gösterir
     public async Task<IActionResult> Models()
     {
         var apiKey = _config["Gemini:ApiKey"];

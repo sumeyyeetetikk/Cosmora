@@ -10,7 +10,6 @@ public class ForecastController : Controller
 
     public async Task<IActionResult> Index(int? cityId)
     {
-        // cityId gelmezse ilk şehri varsayılan seç
         var cities = await _svc.GetCitiesAsync();
         int selected = cityId ?? cities.FirstOrDefault()?.Id ?? 0;
 

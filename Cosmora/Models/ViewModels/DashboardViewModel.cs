@@ -17,7 +17,7 @@ public class DashboardViewModel
 
 public class MonthlyPoint
 {
-    public string Label { get; set; } = "";   // "2024-03"
+    public string Label { get; set; } = "";   
     public decimal Revenue { get; set; }
     public long Quantity { get; set; }
 }

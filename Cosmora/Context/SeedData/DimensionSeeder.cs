@@ -8,9 +8,8 @@ public static class DimensionSeeder
 {
     public static void Seed(CosmoraDbContext db)
     {
-        if (db.Categories.Any()) return; // zaten seed'lenmişse çık
+        if (db.Categories.Any()) return; 
 
-        // --- 8 KATEGORİ ---
         var categories = new List<Category>
         {
             new() { Name = "Makyaj" },
@@ -25,11 +24,9 @@ public static class DimensionSeeder
         db.Categories.AddRange(categories);
         db.SaveChanges();
 
-        // Kolay erişim için isim -> id sözlüğü
         var cat = categories.ToDictionary(c => c.Name, c => c.Id);
 
-        // --- 30 ŞEHİR / 10 ÜLKE ---
-        // SalesWeight: metropoller yüksek, küçük şehirler düşük (clustering'i anlamlı kılar)
+        // SalesWeight: metropoller yüksek, küçük şehirler düşük 
         var cities = new List<City>
         {
             // Türkiye

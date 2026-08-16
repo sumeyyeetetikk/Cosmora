@@ -41,8 +41,6 @@ public static class SalesSeeder
 
         int totalDays = (int)(EndDate - StartDate).TotalDays + 1;
 
-        // Her satırın ağırlığı = ürünPopülerliği * şehirAğırlığı. Satırları bu
-        // ağırlığa göre dağıtırsak bazı ürün/şehirler doğal olarak çok satar.
         var weightedPairs = BuildWeightedPairs(products, cities, out double totalWeight);
 
         var table = CreateSalesTable();
@@ -89,7 +87,7 @@ public static class SalesSeeder
                         ? quantity * (5 + Rng.Next(6))   // ani patlama
                         : Math.Max(1, quantity / 4);      // ani çöküş
 
-                // 6) Fiyat & toplam
+                
                 decimal unitPrice = Math.Round(product.BasePrice * (1 - discount), 2);
                 decimal total = Math.Round(unitPrice * quantity, 2);
 
@@ -189,14 +187,13 @@ public static class SalesSeeder
             BatchSize = BatchSize,
             BulkCopyTimeout = 0
         };
-        // DataTable kolon adları -> DB kolon adları eşlemesi (Id hariç, o identity)
+
         foreach (DataColumn col in table.Columns)
             bulk.ColumnMappings.Add(col.ColumnName, col.ColumnName);
 
         bulk.WriteToServer(table);
     }
 
-    // Hafif yardımcı tipler (entity değil, sadece seed hesapları için)
     private class ProdRef
     {
         public int Id; public decimal BasePrice; public double Popularity; public SeasonalPattern Season;

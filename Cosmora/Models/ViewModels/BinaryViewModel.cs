@@ -23,7 +23,7 @@ public class BinaryViewModel
     public long FalseNegative { get; set; }
 
     // Her şehir için gelecek ay tahmini (canlı)
-    public string NextMonthLabel { get; set; } = "";   // ör. "Eylül 2026"
+    public string NextMonthLabel { get; set; } = ""; 
     public List<CityThresholdPrediction> Predictions { get; set; } = new();
 }
 

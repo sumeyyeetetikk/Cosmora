@@ -9,7 +9,6 @@ public class ForecastViewModel
     public List<HistoryPoint> History { get; set; } = new();
     public List<ForecastPoint> Forecast { get; set; } = new();
 
-    // Kullanılan parametreleri ekranda göstereceğiz
     public int WindowSize { get; set; }
     public int SeriesLength { get; set; }
     public int TrainSize { get; set; }
