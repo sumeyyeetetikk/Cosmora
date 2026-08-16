@@ -16,6 +16,10 @@ builder.Services.AddScoped<IBinaryClassificationService, BinaryClassificationSer
 builder.Services.AddScoped<IMulticlassService, MulticlassService>();
 builder.Services.AddScoped<IAnomalyService, AnomalyService>();
 builder.Services.AddScoped<IClusterService, ClusterService>();
+builder.Services.AddHttpClient();
+builder.Services.AddScoped<IAiAnalysisService, AiAnalysisService>();
+builder.Services.AddScoped<ISalesChatService, SalesChatService>();
+
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();

@@ -1,0 +1,72 @@
+﻿@model Cosmora.Models.ViewModels.AiAnalysisViewModel
+@{
+    ViewData["Title"] = "AI ile Satış Analizi";
+}
+
+<div class="card mb-3">
+    <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+            <div>
+                <h6 class="mb-1">AI Destekli Satış Analizi</h6>
+                <p class="mb-0 small text-muted" style="max-width:640px">
+                    Son 30 günün satış verisi, en çok satan ürünler, şehir/kategori kırılımları ve
+                    yaklaşan sezon bilgisi toplanıp bir dil modeline (Groq · Llama 3.3) gönderilir.
+                    Model <strong>gerçek verinizi</strong> yorumlar; genel durum, dikkat çekenler ve
+                    aksiyon önerileri üretir.
+                </p>
+            </div>
+            <form method="post" asp-action="Analyze">
+                <button type="submit" class="btn text-white" style="background:var(--rose)">
+                    <i class="bi bi-stars"></i> AI ile Analiz Et
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+@if (!string.IsNullOrEmpty(Model.Error))
+{
+    <div class="alert alert-danger">
+        <i class="bi bi-exclamation-triangle"></i> @Model.Error
+    </div>
+}
+
+@if (Model.HasResult)
+{
+    <div class="row g-3">
+        <!-- LLM ANALİZİ -->
+        <div class="col-lg-7">
+            <div class="card h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center gap-2 mb-3">
+                        <span class="badge" style="background:linear-gradient(135deg,#C2185B,#C9A227)">
+                            <i class="bi bi-robot"></i> AI Analizi
+                        </span>
+                        <span class="small text-muted">@Model.GeneratedAt.ToString("dd.MM.yyyy HH:mm")</span>
+                    </div>
+                    <div style="white-space:pre-wrap; line-height:1.7">@Model.AnalysisText</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- GÖNDERİLEN VERİ (şeffaflık) -->
+        <div class="col-lg-5">
+            <div class="card h-100">
+                <div class="card-body">
+                    <h6>Modele Gönderilen Veri</h6>
+                    <p class="small text-muted">Analiz yalnızca aşağıdaki gerçek verilere dayanır (halüsinasyon önlemi):</p>
+                    <pre class="small" style="white-space:pre-wrap; background:#F7F3F6; padding:12px; border-radius:8px; max-height:420px; overflow:auto">@Model.DataContext</pre>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+else if (string.IsNullOrEmpty(Model.Error))
+{
+    <div class="card">
+        <div class="card-body text-center text-muted py-5">
+            <i class="bi bi-stars" style="font-size:2.5rem; color:var(--rose)"></i>
+            <p class="mt-3 mb-0">Analizi başlatmak için yukarıdaki <strong>"AI ile Analiz Et"</strong> butonuna basın.</p>
+        </div>
+    </div>
+}

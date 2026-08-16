@@ -1,0 +1,78 @@
+﻿@model Cosmora.Models.ViewModels.SalesChatViewModel
+@{
+    ViewData["Title"] = "Veriye Soru Sor (AI)";
+}
+
+<div class="card mb-3">
+    <div class="card-body">
+        <h6>Satış Verisine Soru Sor</h6>
+        <p class="small text-muted">
+            Doğal dille sorun, yapay zeka (Gemini) sorunuzu güvenli bir sorguya
+            çevirir, gerçek veriyi çeker ve yanıtlar. Örnek: <em>"İstanbul'da en çok satan 5 ürün"</em>,
+            <em>"kampanyalı satışlarda en çok ciro yapan kategori"</em>,
+            <em>"en çok sipariş alan 3 şehir"</em>.
+        </p>
+        <form method="post" asp-action="Ask" class="row g-2">
+            <div class="col">
+                <input type="text" name="question" class="form-control" placeholder="Sorunuzu yazın..."
+                       value="@Model.Question" autfocus />
+            </div>
+            <div class="col-auto">
+                <button type="submit" class="btn text-white" style="background:var(--rose)">
+                    <i class="bi bi-send"></i> Sor
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+@if (!string.IsNullOrEmpty(Model.Error))
+{
+    <div class="alert alert-danger"><i class="bi bi-exclamation-triangle"></i> @Model.Error</div>
+}
+
+@if (Model.HasResult)
+{
+    <!-- CEVAP -->
+    <div class="card mb-3">
+        <div class="card-body">
+            <div class="d-flex align-items-center gap-2 mb-2">
+                <span class="badge" style="background:linear-gradient(135deg,#C2185B,#C9A227)">
+                    <i class="bi bi-robot"></i> AI Cevabı
+                </span>
+            </div>
+            <div style="white-space:pre-wrap; line-height:1.7">@Model.Answer</div>
+        </div>
+    </div>
+
+    <!-- ŞEFFAFLIK: niyet + veri -->
+    <!-- ŞEFFAFLIK: niyet + veri (varsayılan kapalı, tıklayınca açılır) -->
+    <details class="mt-2">
+        <summary class="text-muted small" style="cursor:pointer">
+            <i class="bi bi-shield-check"></i> AI nasıl çalıştı? (güvenli sorgu detayları)
+        </summary>
+        <div class="row g-3 mt-1">
+            <div class="col-md-5">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h6 class="small">Anlaşılan Niyet (JSON)</h6>
+                        <p class="small text-muted mb-2">
+                            LLM ham SQL üretmez; yalnızca bu sınırlı JSON'u döner. Gerçek sorguyu
+                            uygulama kodu kurar — bu, prompt injection'ı engeller.
+                        </p>
+                        <pre class="small" style="white-space:pre-wrap; background:#F7F3F6; padding:12px; border-radius:8px">@Model.IntentJson</pre>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-7">
+                <div class="card h-100">
+                    <div class="card-body">
+                        <h6 class="small">Çekilen Gerçek Veri</h6>
+                        <p class="small text-muted mb-2">Cevap yalnızca aşağıdaki gerçek sorgu sonucuna dayanır (halüsinasyon önlemi).</p>
+                        <pre class="small" style="white-space:pre-wrap; background:#F7F3F6; padding:12px; border-radius:8px">@Model.DataResult</pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </details>
+}
